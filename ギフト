@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Coin Center — デモ</title>
+<style>
+  :root{
+    --bg1: #ffffff;
+    --bg2: #f7f9fb;
+    --accent: #ff2d6d; /* pink */
+    --accent2: #2fb6ff; /* blue */
+    --muted: #6b7280;
+    --card: #ffffff;
+    --glass: rgba(255,255,255,0.6);
+    --radius: 14px;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;font-family:Inter, system-ui, -apple-system, "Hiragino Kaku Gothic ProN", "Meiryo", Arial; background: linear-gradient(180deg,var(--bg1),var(--bg2)); color:#111}
+  .wrap{max-width:1100px;margin:28px auto;padding:20px;display:grid;grid-template-columns:1fr 380px;gap:20px}
+  header{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+  .logo{font-weight:800;font-size:20px}
+  .logo .mark{color:var(--accent)}
+  .subtitle{color:var(--muted);font-size:13px}
+  /* left main */
+  .mainCard{background:var(--card);border-radius:var(--radius);box-shadow:0 8px 30px rgba(16,24,40,0.06);padding:18px}
+  .hero{display:flex;justify-content:space-between;align-items:center;gap:12px}
+  .bigTitle{font-size:20px;font-weight:800}
+  .ctaRow{display:flex;gap:10px}
+  .btn{
+    padding:10px 14px;border-radius:12px;border:none;cursor:pointer;font-weight:700;
+    background:linear-gradient(90deg,var(--accent),#ff6e8e);color:#fff;box-shadow:0 6px 18px rgba(255,45,109,0.12)
+  }
+  .btn.secondary{background:transparent;color:var(--muted);border:1px solid rgba(0,0,0,0.06);box-shadow:none}
+  .section{margin-top:16px}
+  .cards{display:flex;gap:12px;flex-wrap:wrap}
+  .storeCard{flex:1;min-width:170px;background:linear-gradient(180deg,#fff,#fff);border-radius:12px;padding:12px;border:1px solid rgba(0,0,0,0.04);text-align:center}
+  .storeCard .price{font-weight:800;font-size:18px;color:var(--accent)}
+  .storeCard .sub{color:var(--muted);font-size:13px;margin-top:6px}
+  label.small{display:block;color:var(--muted);font-size:13px;margin-bottom:6px}
+  input[type="number"],input[type="text"],select,textarea{
+    width:100%;padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,0.06);background:#fff;font-size:14px;outline:none
+  }
+  textarea{min-height:84px;resize:vertical}
+  .row{display:flex;gap:10px}
+  .col{flex:1}
+  /* right column */
+  .sideCard{background:var(--card);border-radius:12px;padding:16px;box-shadow:0 6px 18px rgba(16,24,40,0.04);border:1px solid rgba(0,0,0,0.04)}
+  .balance{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .balance .num{font-size:28px;font-weight:900;color:#111}
+  .small{font-size:13px;color:var(--muted)}
+  .history{margin-top:12px;max-height:360px;overflow:auto;padding-right:6px}
+  .item{display:flex;justify-content:space-between;align-items:center;padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,0.03);margin-bottom:8px;background:linear-gradient(180deg,#fff,#fbfdff)}
+  .tiny{font-size:12px;color:var(--muted)}
+  footer{grid-column:1/-1;margin-top:20px;text-align:center;color:var(--muted);font-size:13px}
+  /* modal */
+  .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.35);z-index:60}
+  .modal.open{display:flex}
+  .dialog{width:92%;max-width:560px;background:linear-gradient(180deg,#fff,#fbfdff);padding:18px;border-radius:12px;box-shadow:0 18px 60px rgba(2,6,23,0.35)}
+  .receiptRow{display:flex;align-items:center;gap:12px}
+  .receiptCoin{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;font-weight:800;background:linear-gradient(180deg,#ffd36a,#ffb347);color:#111}
+  .flex{display:flex;gap:10px;align-items:center}
+  .muted{color:var(--muted)}
+  .controlRow{display:flex;gap:10px;align-items:center;margin-top:8px}
+  /* responsive */
+  @media(max-width:980px){
+    .wrap{grid-template-columns:1fr; padding:12px}
+    .sideCard{order:2}
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <!-- left: main -->
+    <div class="mainCard">
+      <div class="hero">
+        <div>
+          <div class="bigTitle">Coin Center</div>
+          <div class="subtitle">デモ — コインを購入してギフトを送る流れを体験できます（課金なし）</div>
+        </div>
+        <div class="ctaRow">
+          <button class="btn" id="goPurchaseBtn">💰 課金する</button>
+          <button class="btn" id="goGiftBtn" style="background:linear-gradient(90deg,var(--accent2),#5bd1ff)">🎁 ギフトを送る</button>
+        </div>
+      </div>
+
+      <!-- PURCHASE PAGE (visible by tab) -->
+      <div id="purchasePage" class="section">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <label class="small">現在の残高</label>
+            <div style="display:flex;align-items:baseline;gap:8px">
+              <div class="num balanceNum" style="font-size:28px;font-weight:900">0</div>
+              <div class="tiny muted">コイン</div>
+            </div>
+          </div>
+          <div style="text-align:right">
+            <div class="small">デモアカウント</div>
+            <div style="font-weight:800">demo_user</div>
+          </div>
+        </div>
+
+        <div class="section">
+          <label class="small">一番人気のパック</label>
+          <div class="cards">
+            <div class="storeCard">
+              <div style="font-size:22px;font-weight:800">100 コイン</div>
+              <div class="sub">お試しパック</div>
+              <div style="height:8px"></div>
+              <button class="btn" data-add="100">購入する</button>
+            </div>
+            <div class="storeCard">
+              <div style="font-size:22px;font-weight:800">500 コイン</div>
+              <div class="sub">お得パック</div>
+              <div style="height:8px"></div>
+              <button class="btn" data-add="500">購入する</button>
+            </div>
+            <div class="storeCard">
+              <div style="font-size:22px;font-weight:800">1000 コイン</div>
+              <div class="sub">超お得パック</div>
+              <div style="height:8px"></div>
+              <button class="btn" data-add="1000">購入する</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div style="display:flex;gap:12px;align-items:center">
+            <div style="flex:1">
+              <label class="small">任意の枚数を追加（デモ）</label>
+              <input id="customBuy" type="number" placeholder="例: 250">
+            </div>
+            <div>
+              <button class="btn" id="buyCustomBtn">追加</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="section small muted">※ この購入はデモ表示のみで、実際に課金は発生しません。</div>
+      </div>
+
+      <!-- GIFT PAGE -->
+      <div id="giftPage" class="section" style="display:none">
+        <div>
+          <label class="small">残高</label>
+          <div style="display:flex;align-items:baseline;gap:8px">
+            <div class="num balanceNum">0</div>
+            <div class="tiny muted">コイン</div>
+          </div>
+        </div>
+
+        <div style="margin-top:12px">
+          <label class="small">送る相手（@username）</label>
+          <input id="giftUser" type="text" placeholder="@username">
+        </div>
+
+        <div style="margin-top:12px">
+          <label class="small">送るコイン数</label>
+          <div style="display:flex;gap:10px">
+            <input id="giftAmount" type="number" placeholder="例: 100">
+            <button class="btn" id="sendGiftBtn">送信する</button>
+          </div>
+        </div>
+
+        <div style="margin-top:12px" class="small muted">送信するとデモ残高から差し引かれ、履歴に保存されます。</div>
+      </div>
+    </div>
+
+    <!-- right: side -->
+    <div class="sideCard">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div class="small">保有コイン</div>
+          <div class="num balanceNum">0</div>
+          <div class="tiny muted">デモ残高</div>
+        </div>
+        <div style="text-align:right">
+          <div class="small">アカウント</div>
+          <div style="font-weight:800">demo_user</div>
+          <div style="height:8px"></div>
+          <button class="btn secondary" id="resetBalanceBtn">リセット</button>
+        </div>
+      </div>
+
+      <div style="margin-top:12px;display:flex;gap:8px">
+        <button class="btn secondary" id="goStoreBtn">課金ページ</button>
+        <button class="btn secondary" id="goGiftBtn2">ギフトページ</button>
+      </div>
+
+      <div style="margin-top:12px" class="small muted">送信履歴</div>
+      <div class="history" id="historyList">
+        <!-- history items -->
+      </div>
+
+      <div style="margin-top:12px;display:flex;gap:8px">
+        <button class="btn" id="exportCsv">CSV出力</button>
+        <button class="btn secondary" id="clearHistory">履歴クリア</button>
+      </div>
+    </div>
+  </div>
+
+  <footer>このサイトはデモです — 実際の決済は行われません</footer>
+
+  <!-- Modal -->
+  <div class="modal" id="modal">
+    <div class="dialog">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="display:flex;gap:12px;align-items:center">
+          <div class="receiptCoin">◉</div>
+          <div>
+            <div style="font-weight:800" id="rcptUser">—</div>
+            <div class="tiny muted" id="rcptTime">—</div>
+          </div>
+        </div>
+        <div style="text-align:right">
+          <div class="small">数量</div>
+          <div style="font-weight:900;color:var(--accent)" id="rcptAmt">0</div>
+        </div>
+      </div>
+      <div style="margin-top:12px;display:flex;justify-content:flex-end;gap:8px">
+        <button class="btn secondary" id="closeModal">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  // state keys
+  const KEY_BAL = 'coin_demo_balance_v1';
+  const KEY_HIS = 'coin_demo_history_v1';
+
+  // elements
+  const goPurchaseBtn = document.getElementById('goPurchaseBtn');
+  const goGiftBtn = document.getElementById('goGiftBtn');
+  const goStoreBtn = document.getElementById('goStoreBtn');
+  const goGiftBtn2 = document.getElementById('goGiftBtn2');
+  const purchasePage = document.getElementById('purchasePage');
+  const giftPage = document.getElementById('giftPage');
+  const balanceEls = document.querySelectorAll('.balanceNum');
+  const addButtons = Array.from(document.querySelectorAll('.storeCard .btn'));
+  const customBuy = document.getElementById('customBuy');
+  const buyCustomBtn = document.getElementById('buyCustomBtn');
+  const giftUser = document.getElementById('giftUser');
+  const giftAmount = document.getElementById('giftAmount');
+  const sendGiftBtn = document.getElementById('sendGiftBtn');
+  const historyList = document.getElementById('historyList');
+  const modal = document.getElementById('modal');
+  const rcptUser = document.getElementById('rcptUser');
+  const rcptAmt = document.getElementById('rcptAmt');
+  const rcptTime = document.getElementById('rcptTime');
+  const closeModal = document.getElementById('closeModal');
+  const resetBalanceBtn = document.getElementById('resetBalanceBtn');
+  const exportCsv = document.getElementById('exportCsv');
+  const clearHistory = document.getElementById('clearHistory');
+
+  // helpers
+  function loadBalance(){ return Number(localStorage.getItem(KEY_BAL) || '2500'); }
+  function saveBalance(v){ localStorage.setItem(KEY_BAL, String(v)); }
+  function loadHistory(){ return JSON.parse(localStorage.getItem(KEY_HIS) || '[]'); }
+  function saveHistory(h){ localStorage.setItem(KEY_HIS, JSON.stringify(h)); }
+
+  // init
+  let balance = loadBalance();
+  let history = loadHistory();
+  function renderBalance(){
+    balanceEls.forEach(el => el.textContent = balance.toLocaleString());
+  }
+  function renderHistory(){
+    historyList.innerHTML = history.length ? history.map(h => `
+      <div class="item">
+        <div>
+          <div style="font-weight:700">${h.user}</div>
+          <div class="tiny muted">${new Date(h.time).toLocaleString()}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-weight:900">${h.amount.toLocaleString()}</div>
+          <div class="tiny muted">${h.msg||''}</div>
+        </div>
+      </div>
+    `).join('') : '<div class="tiny muted">履歴はありません</div>';
+  }
+  renderBalance(); renderHistory();
+
+  // page switching
+  function showPurchase(){ purchasePage.style.display='block'; giftPage.style.display='none'; window.scrollTo({top:0,behavior:'smooth'}); }
+  function showGift(){ purchasePage.style.display='none'; giftPage.style.display='block'; window.scrollTo({top:0,behavior:'smooth'}); }
+  goPurchaseBtn.addEventListener('click', showPurchase);
+  goGiftBtn.addEventListener('click', showGift);
+  goStoreBtn.addEventListener('click', showPurchase);
+  goGiftBtn2.addEventListener('click', showGift);
+
+  // add pack handlers
+  addButtons.forEach(b=>{
+    b.addEventListener('click', ()=>{
+      const n = Number(b.dataset.add || 0);
+      if(n>0) doAdd(n,'パック購入');
+    });
+  });
+  buyCustomBtn.addEventListener('click', ()=>{
+    const n = Number(customBuy.value || 0);
+    if(!n || n<=0){ alert('追加する枚数を入力してください'); return; }
+    doAdd(n,'カスタム追加');
+  });
+
+  function doAdd(n, label){
+    balance += n;
+    saveBalance(balance);
+    renderBalance();
+    // save history as "purchase" entry
+    const h = loadHistory();
+    h.unshift({ type:'purchase', amount:n, msg: label, time: new Date().toISOString(), user: '購入' });
+    saveHistory(h);
+    history = h; renderHistory();
+    showPulse(`${n.toLocaleString()} コインを追加しました`);
+  }
+
+  // send gift
+  sendGiftBtn.addEventListener('click', ()=>{
+    const user = (giftUser.value||'').trim();
+    const n = Number(giftAmount.value || 0);
+    const msg = ''; // could use an input if needed
+    if(!user || !/^@/.test(user)){ alert('受取ユーザー名は @username の形式で入力してください'); return; }
+    if(!n || n<=0){ alert('送信するコイン数を入力してください'); return; }
+    if(n > balance){ alert('残高不足です'); return; }
+
+    balance -= n;
+    saveBalance(balance); renderBalance();
+
+    // save history
+    const h = loadHistory();
+    h.unshift({ type:'gift', user, amount:n, msg, time: new Date().toISOString() });
+    saveHistory(h); history = h; renderHistory();
+
+    // show modal receipt
+    rcptUser.textContent = user;
+    rcptAmt.textContent = n.toLocaleString();
+    rcptTime.textContent = new Date().toLocaleString();
+    modal.classList.add('open');
+
+    // simple confetti visual (falling coins)
+    spawnCoins();
+  });
+
+  closeModal.addEventListener('click', ()=> modal.classList.remove('open'));
+
+  // reset / clear
+  resetBalanceBtn.addEventListener('click', ()=>{
+    if(confirm('デモ残高を初期値（2500）にリセットしますか？')){
+      balance = 2500; saveBalance(balance); renderBalance();
+      showPulse('デモ残高をリセットしました');
+    }
+  });
+  clearHistory.addEventListener('click', ()=>{
+    if(confirm('履歴を削除しますか？')){ localStorage.removeItem(KEY_HIS); history=[]; renderHistory(); showPulse('履歴をクリアしました'); }
+  });
+
+  // CSV export
+  exportCsv.addEventListener('click', ()=>{
+    const arr = loadHistory();
+    if(!arr.length){ alert('履歴がありません'); return; }
+    let csv = 'time,type,user,amount,msg\n' + arr.map(it => `${it.time},${it.type||''},"${(it.user||'').replace(/"/g,'""')}",${it.amount||0},"${(it.msg||'').replace(/"/g,'""')}"`).join('\n');
+    const a = document.createElement('a');
+    a.href = 'data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+    a.download = 'gift_history.csv';
+    a.click();
+  });
+
+  // little helpers
+  function showPulse(text){
+    const el = document.createElement('div');
+    el.style.position='fixed'; el.style.left='50%'; el.style.top='12%';
+    el.style.transform='translateX(-50%)'; el.style.background='linear-gradient(90deg,#ff2d6d,#ff8aa3)';
+    el.style.color='#fff'; el.style.padding='10px 16px'; el.style.borderRadius='10px'; el.style.boxShadow='0 10px 34px rgba(0,0,0,0.18)';
+    el.style.zIndex=9999; el.style.fontWeight=700; el.textContent = text;
+    document.body.appendChild(el);
+    setTimeout(()=> el.style.opacity='0',1500);
+    setTimeout(()=> el.remove(),2500);
+  }
+
+  // falling coin animation
+  function spawnCoins(){
+    for(let i=0;i<16;i++){
+      const c = document.createElement('div');
+      c.style.position='fixed'; c.style.left = (40 + Math.random()*50) + '%';
+      c.style.top = '-6%';
+      const s = 20 + Math.random()*24;
+      c.style.width = s + 'px'; c.style.height = s + 'px';
+      c.style.borderRadius='50%';
+      c.style.background='radial-gradient(circle at 30% 30%, #fff8d6, #ffd066)';
+      c.style.display='grid'; c.style.placeItems='center';
+      c.style.fontWeight='900'; c.style.color='#1b1b1b';
+      c.textContent = '◉';
+      c.style.transition = `transform ${1.2+Math.random()*0.8}s linear, opacity ${1.2+Math.random()*0.8}s linear`;
+      document.body.appendChild(c);
+      requestAnimationFrame(()=> {
+        c.style.transform = `translateY(${120 + Math.random()*30}vh) rotate(${Math.random()*720}deg)`;
+        c.style.opacity = '0';
+      });
+      setTimeout(()=> c.remove(), 2200);
+    }
+  }
+
+  // initial UI
+  renderBalance(); renderHistory();
+
+  // ensure purchase buttons wired if inner selection exists
+  // (storeCard buttons already wired above)
+
+})();
+</script>
+</body>
+</html>
